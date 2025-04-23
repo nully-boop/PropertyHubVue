@@ -4,30 +4,42 @@ import {
   useMutation,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { User as SelectUser, insertUserSchema } from "@shared/schema";
-import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
+import { queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { authApi } from "../services/api";
 
-type AuthContextType = {
-  user: SelectUser | null;
+// Define Laravel user type to match the response structure
+interface LaravelUser {
+  id: number;
+  name: string;
+  email: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface AuthContextType {
+  user: LaravelUser | null;
   isLoading: boolean;
   error: Error | null;
-  loginMutation: UseMutationResult<Omit<SelectUser, "password">, Error, LoginData>;
+  loginMutation: UseMutationResult<LaravelUser, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
-  registerMutation: UseMutationResult<Omit<SelectUser, "password">, Error, RegisterData>;
-};
+  registerMutation: UseMutationResult<LaravelUser, Error, RegisterData>;
+}
 
-type LoginData = {
-  username: string;
+interface LoginData {
+  email: string;
   password: string;
-};
+}
 
-const registerSchema = insertUserSchema.extend({
-  confirmPassword: z.string()
-}).refine(data => data.password === data.confirmPassword, {
+const registerSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  password_confirmation: z.string()
+}).refine(data => data.password === data.password_confirmation, {
   message: "Passwords don't match",
-  path: ["confirmPassword"],
+  path: ["password_confirmation"],
 });
 
 type RegisterData = z.infer<typeof registerSchema>;
@@ -40,27 +52,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     data: user,
     error,
     isLoading,
-  } = useQuery<SelectUser | null>({
-    queryKey: ["/api/user"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
+  } = useQuery<LaravelUser | null>({
+    queryKey: ["user"],
+    queryFn: async () => {
+      try {
+        return await authApi.getCurrentUser();
+      } catch (error) {
+        if ((error as any).status === 401) {
+          return null;
+        }
+        throw error;
+      }
+    },
   });
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/login", credentials);
-      return await res.json();
+      return await authApi.login(credentials);
     },
     onSuccess: (userData) => {
-      queryClient.setQueryData(["/api/user"], userData);
+      queryClient.setQueryData(["user"], userData);
       toast({
         title: "Login successful",
-        description: `Welcome back, ${userData.username}!`,
+        description: `Welcome back, ${userData.name}!`,
       });
     },
     onError: (error: Error) => {
       toast({
         title: "Login failed",
-        description: error.message || "Invalid username or password",
+        description: error.message || "Invalid email or password",
         variant: "destructive",
       });
     },
@@ -68,22 +88,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterData) => {
-      // Remove confirmPassword before sending to API
-      const { confirmPassword, ...credentials } = data;
-      const res = await apiRequest("POST", "/api/register", credentials);
-      return await res.json();
+      return await authApi.register(data);
     },
     onSuccess: (userData) => {
-      queryClient.setQueryData(["/api/user"], userData);
+      queryClient.setQueryData(["user"], userData);
       toast({
         title: "Registration successful",
-        description: `Welcome, ${userData.username}!`,
+        description: `Welcome, ${userData.name}!`,
       });
     },
-    onError: (error: Error) => {
+    onError: (error: Error & { errors?: Record<string, string[]> }) => {
+      // Handle Laravel validation errors which come as { errors: { field: [messages] } }
+      let errorMessage = error.message || "Could not create account";
+      
+      if (error.errors) {
+        const firstErrorField = Object.keys(error.errors)[0];
+        if (firstErrorField && error.errors[firstErrorField]?.[0]) {
+          errorMessage = error.errors[firstErrorField][0];
+        }
+      }
+      
       toast({
         title: "Registration failed",
-        description: error.message || "Could not create account",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -91,10 +118,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/logout");
+      await authApi.logout();
     },
     onSuccess: () => {
-      queryClient.setQueryData(["/api/user"], null);
+      queryClient.setQueryData(["user"], null);
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",

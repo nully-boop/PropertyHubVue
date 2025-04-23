@@ -12,19 +12,20 @@ import { Redirect } from "wouter";
 import { z } from "zod";
 
 const loginSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const registerSchema = z.object({
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
-}).refine(data => data.password === data.confirmPassword, {
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  password_confirmation: z.string().min(8, "Password must be at least 8 characters"),
+}).refine(data => data.password === data.password_confirmation, {
   message: "Passwords don't match",
-  path: ["confirmPassword"],
+  path: ["password_confirmation"],
 });
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
@@ -36,7 +37,7 @@ export default function AuthPage() {
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
     },
   });
@@ -44,9 +45,10 @@ export default function AuthPage() {
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      username: "",
+      name: "",
+      email: "",
       password: "",
-      confirmPassword: "",
+      password_confirmation: "",
     },
   });
 
@@ -92,14 +94,14 @@ export default function AuthPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="username">Username</Label>
+                      <Label htmlFor="email">Email</Label>
                       <Input 
-                        id="username"
-                        type="text"
-                        {...loginForm.register("username")}
+                        id="email"
+                        type="email"
+                        {...loginForm.register("email")}
                       />
-                      {loginForm.formState.errors.username && (
-                        <p className="text-sm text-red-500">{loginForm.formState.errors.username.message}</p>
+                      {loginForm.formState.errors.email && (
+                        <p className="text-sm text-red-500">{loginForm.formState.errors.email.message}</p>
                       )}
                     </div>
                     
@@ -142,14 +144,26 @@ export default function AuthPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="reg-username">Username</Label>
+                      <Label htmlFor="reg-name">Name</Label>
                       <Input 
-                        id="reg-username"
+                        id="reg-name"
                         type="text"
-                        {...registerForm.register("username")}
+                        {...registerForm.register("name")}
                       />
-                      {registerForm.formState.errors.username && (
-                        <p className="text-sm text-red-500">{registerForm.formState.errors.username.message}</p>
+                      {registerForm.formState.errors.name && (
+                        <p className="text-sm text-red-500">{registerForm.formState.errors.name.message}</p>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="reg-email">Email</Label>
+                      <Input 
+                        id="reg-email"
+                        type="email"
+                        {...registerForm.register("email")}
+                      />
+                      {registerForm.formState.errors.email && (
+                        <p className="text-sm text-red-500">{registerForm.formState.errors.email.message}</p>
                       )}
                     </div>
                     
@@ -170,10 +184,10 @@ export default function AuthPage() {
                       <Input 
                         id="reg-confirm-password"
                         type="password"
-                        {...registerForm.register("confirmPassword")}
+                        {...registerForm.register("password_confirmation")}
                       />
-                      {registerForm.formState.errors.confirmPassword && (
-                        <p className="text-sm text-red-500">{registerForm.formState.errors.confirmPassword.message}</p>
+                      {registerForm.formState.errors.password_confirmation && (
+                        <p className="text-sm text-red-500">{registerForm.formState.errors.password_confirmation.message}</p>
                       )}
                     </div>
                   </CardContent>

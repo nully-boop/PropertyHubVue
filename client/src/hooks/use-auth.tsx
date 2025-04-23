@@ -56,7 +56,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryKey: ["user"],
     queryFn: async () => {
       try {
-        return await authApi.getCurrentUser();
+        const userData = await authApi.getCurrentUser() as LaravelUser;
+        return userData;
       } catch (error) {
         if ((error as any).status === 401) {
           return null;

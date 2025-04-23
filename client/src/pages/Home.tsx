@@ -68,8 +68,8 @@ export default function Home() {
           <div>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-heading font-semibold">Featured Properties</h2>
-              <Link href="/buy">
-                <a className="text-primary hover:underline">View all properties →</a>
+              <Link className="text-primary hover:underline" href="/buy">
+                View all properties →
               </Link>
             </div>
 

@@ -33,7 +33,12 @@ export default function PropertyFilter({ onFilter, initialFilters = {} }: Proper
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setFilters({ ...filters, [name]: value });
+    // Handle special "any_*" values which should be treated as empty
+    if (value.startsWith('any_')) {
+      setFilters({ ...filters, [name]: '' });
+    } else {
+      setFilters({ ...filters, [name]: value });
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -144,7 +149,7 @@ export default function PropertyFilter({ onFilter, initialFilters = {} }: Proper
                       <SelectValue placeholder="Any" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Any</SelectItem>
+                      <SelectItem value="any_bedrooms">Any</SelectItem>
                       <SelectItem value="1">1+</SelectItem>
                       <SelectItem value="2">2+</SelectItem>
                       <SelectItem value="3">3+</SelectItem>
@@ -164,7 +169,7 @@ export default function PropertyFilter({ onFilter, initialFilters = {} }: Proper
                       <SelectValue placeholder="Any" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Any</SelectItem>
+                      <SelectItem value="any_bathrooms">Any</SelectItem>
                       <SelectItem value="1">1+</SelectItem>
                       <SelectItem value="1.5">1.5+</SelectItem>
                       <SelectItem value="2">2+</SelectItem>
@@ -185,7 +190,7 @@ export default function PropertyFilter({ onFilter, initialFilters = {} }: Proper
                       <SelectValue placeholder="Any" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Any</SelectItem>
+                      <SelectItem value="any_sqft">Any</SelectItem>
                       <SelectItem value="500">500+ sq ft</SelectItem>
                       <SelectItem value="1000">1000+ sq ft</SelectItem>
                       <SelectItem value="1500">1500+ sq ft</SelectItem>
@@ -206,7 +211,7 @@ export default function PropertyFilter({ onFilter, initialFilters = {} }: Proper
                       <SelectValue placeholder="Any" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Any</SelectItem>
+                      <SelectItem value="any_year">Any</SelectItem>
                       <SelectItem value="2020">2020+</SelectItem>
                       <SelectItem value="2010">2010+</SelectItem>
                       <SelectItem value="2000">2000+</SelectItem>
@@ -226,7 +231,7 @@ export default function PropertyFilter({ onFilter, initialFilters = {} }: Proper
                       <SelectValue placeholder="Any" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Any</SelectItem>
+                      <SelectItem value="any_feature">Any</SelectItem>
                       <SelectItem value="Pool">Pool</SelectItem>
                       <SelectItem value="Garage">Garage</SelectItem>
                       <SelectItem value="Garden">Garden</SelectItem>
@@ -249,7 +254,7 @@ export default function PropertyFilter({ onFilter, initialFilters = {} }: Proper
                       <SelectValue placeholder="Any" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Any</SelectItem>
+                      <SelectItem value="any_listing">Any</SelectItem>
                       <SelectItem value="For Sale">For Sale</SelectItem>
                       <SelectItem value="For Rent">For Rent</SelectItem>
                     </SelectContent>

@@ -1,12 +1,11 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Express, Request, Response, NextFunction } from "express";
+import { Express } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
-import createMemoryStore from "memorystore";
 
 declare global {
   namespace Express {
@@ -30,18 +29,15 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  const MemoryStore = createMemoryStore(session);
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || "development-secret-key",
+    secret: process.env.SESSION_SECRET || "development_secret",
     resave: false,
     saveUninitialized: false,
-    store: new MemoryStore({
-      checkPeriod: 86400000 // prune expired entries every 24h
-    }),
     cookie: {
       secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    }
+      maxAge: 1000 * 60 * 60 * 24 // 24 hours
+    },
+    store: storage.sessionStore
   };
 
   app.set("trust proxy", 1);
@@ -55,8 +51,9 @@ export function setupAuth(app: Express) {
         const user = await storage.getUserByUsername(username);
         if (!user || !(await comparePasswords(password, user.password))) {
           return done(null, false);
+        } else {
+          return done(null, user);
         }
-        return done(null, user);
       } catch (error) {
         return done(error);
       }
@@ -87,7 +84,7 @@ export function setupAuth(app: Express) {
 
       req.login(user, (err) => {
         if (err) return next(err);
-        // Return user without password
+        // Don't send password to client
         const { password, ...userWithoutPassword } = user;
         res.status(201).json(userWithoutPassword);
       });
@@ -97,15 +94,20 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err: Error | null, user: Express.User | false, info: { message: string } | undefined) => {
-      if (err) return next(err);
-      if (!user) return res.status(401).json({ error: "Invalid username or password" });
-      
+    passport.authenticate("local", (err, user, info) => {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        return res.status(401).json({ error: "Invalid username or password" });
+      }
       req.login(user, (err) => {
-        if (err) return next(err);
-        // Return user without password
+        if (err) {
+          return next(err);
+        }
+        // Don't send password to client
         const { password, ...userWithoutPassword } = user;
-        return res.status(200).json(userWithoutPassword);
+        return res.json(userWithoutPassword);
       });
     })(req, res, next);
   });
@@ -118,8 +120,10 @@ export function setupAuth(app: Express) {
   });
 
   app.get("/api/user", (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ error: "Not authenticated" });
-    // Return user without password
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    // Don't send password to client
     const { password, ...userWithoutPassword } = req.user as SelectUser;
     res.json(userWithoutPassword);
   });

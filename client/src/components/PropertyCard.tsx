@@ -33,13 +33,11 @@ export default function PropertyCard({ property, className }: PropertyCardProps)
     <div className={cn("property-card bg-white rounded-lg shadow-md overflow-hidden transition duration-300", className)}>
       <div className="relative h-48 sm:h-40 md:h-48">
         <Link href={`/property/${property.id}`}>
-          <a>
             <img 
               src={mainImage?.imageUrl} 
               alt={property.title} 
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover cursor-pointer"
             />
-          </a>
         </Link>
         <div className="absolute top-3 left-3">
           <span className={cn(
@@ -64,7 +62,7 @@ export default function PropertyCard({ property, className }: PropertyCardProps)
             <p className="text-accent font-semibold mb-1">{formatPrice()}</p>
             <h3 className="font-heading font-semibold text-lg">
               <Link href={`/property/${property.id}`}>
-                <a className="hover:text-primary">{property.title}</a>
+                <span className="hover:text-primary cursor-pointer">{property.title}</span>
               </Link>
             </h3>
             <p className="text-gray-600 text-sm">{property.address}, {property.city}, {property.state}</p>

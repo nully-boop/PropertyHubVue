@@ -1,20 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { ChevronDown, ChevronUp, Search, MapPin } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ChevronDown, ChevronUp, Search, MapPin, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+
+// Define a proper type for the filters
+interface PropertyFilters {
+  location?: string;
+  propertyType?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  minBedrooms?: string;
+  minBathrooms?: string;
+  minSquareFeet?: string;
+  minYearBuilt?: string;
+  features: string[];
+  listingType?: string;
+}
 
 interface PropertyFilterProps {
-  onFilter: (filters: any) => void;
-  initialFilters?: any;
+  onFilter: (filters: PropertyFilters) => void;
+  initialFilters?: Partial<PropertyFilters>;
 }
 
 export default function PropertyFilter({ onFilter, initialFilters = {} }: PropertyFilterProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<PropertyFilters>({
     location: initialFilters.location || '',
     propertyType: initialFilters.propertyType || '',
     minPrice: initialFilters.minPrice || '',
@@ -26,6 +42,23 @@ export default function PropertyFilter({ onFilter, initialFilters = {} }: Proper
     features: initialFilters.features || [],
     listingType: initialFilters.listingType || '',
   });
+
+  // Count active filters to show to the user
+  const [activeFilterCount, setActiveFilterCount] = useState(0);
+
+  useEffect(() => {
+    let count = 0;
+    if (filters.location) count++;
+    if (filters.propertyType) count++;
+    if (filters.minPrice || filters.maxPrice) count++;
+    if (filters.minBedrooms) count++;
+    if (filters.minBathrooms) count++;
+    if (filters.minSquareFeet) count++;
+    if (filters.minYearBuilt) count++;
+    if (filters.listingType) count++;
+    count += filters.features.length;
+    setActiveFilterCount(count);
+  }, [filters]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -41,9 +74,52 @@ export default function PropertyFilter({ onFilter, initialFilters = {} }: Proper
     }
   };
 
+  const handleFeatureToggle = (feature: string) => {
+    const currentFeatures = [...filters.features];
+    const featureIndex = currentFeatures.indexOf(feature);
+    
+    if (featureIndex === -1) {
+      // Feature not in array, add it
+      currentFeatures.push(feature);
+    } else {
+      // Feature in array, remove it
+      currentFeatures.splice(featureIndex, 1);
+    }
+    
+    setFilters({ ...filters, features: currentFeatures });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onFilter(filters);
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      location: '',
+      propertyType: '',
+      minPrice: '',
+      maxPrice: '',
+      minBedrooms: '',
+      minBathrooms: '',
+      minSquareFeet: '',
+      minYearBuilt: '',
+      features: [],
+      listingType: ''
+    });
+    // Immediately apply the reset filters
+    onFilter({
+      location: '',
+      propertyType: '',
+      minPrice: '',
+      maxPrice: '',
+      minBedrooms: '',
+      minBathrooms: '',
+      minSquareFeet: '',
+      minYearBuilt: '',
+      features: [],
+      listingType: ''
+    });
   };
 
   const toggleAdvanced = () => {
@@ -124,7 +200,7 @@ export default function PropertyFilter({ onFilter, initialFilters = {} }: Proper
             </div>
           </div>
           
-          <div>
+          <div className="flex items-center justify-between">
             <button 
               type="button"
               onClick={toggleAdvanced}
@@ -136,6 +212,26 @@ export default function PropertyFilter({ onFilter, initialFilters = {} }: Proper
                 <ChevronDown className="ml-1 h-4 w-4" />
               }
             </button>
+            
+            <div className="flex items-center space-x-2">
+              {activeFilterCount > 0 && (
+                <>
+                  <Badge variant="outline" className="bg-gray-100">
+                    {activeFilterCount} {activeFilterCount === 1 ? 'filter' : 'filters'} applied
+                  </Badge>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={resetFilters}
+                    className="text-gray-500 hover:text-red-500 flex items-center"
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    <span className="text-xs">Reset</span>
+                  </Button>
+                </>
+              )}
+            </div>
             
             {showAdvanced && (
               <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -221,27 +317,28 @@ export default function PropertyFilter({ onFilter, initialFilters = {} }: Proper
                   </Select>
                 </div>
                 
-                <div>
-                  <Label htmlFor="features" className="block text-sm font-medium text-gray-700 mb-1">Features</Label>
-                  <Select
-                    value={(filters.features || [])[0]}
-                    onValueChange={(value) => handleSelectChange('features', value)}
-                  >
-                    <SelectTrigger id="features">
-                      <SelectValue placeholder="Any" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="any_feature">Any</SelectItem>
-                      <SelectItem value="Pool">Pool</SelectItem>
-                      <SelectItem value="Garage">Garage</SelectItem>
-                      <SelectItem value="Garden">Garden</SelectItem>
-                      <SelectItem value="Balcony">Balcony</SelectItem>
-                      <SelectItem value="Air Conditioning">Air Conditioning</SelectItem>
-                      <SelectItem value="Gym">Gym</SelectItem>
-                      <SelectItem value="Security System">Security System</SelectItem>
-                      <SelectItem value="Fireplace">Fireplace</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="col-span-3">
+                  <Label className="block text-sm font-medium text-gray-700 mb-2">Features</Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      "Pool", "Garage", "Garden", "Balcony", 
+                      "Air Conditioning", "Gym", "Security System", "Fireplace"
+                    ].map((feature) => (
+                      <div key={feature} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`feature-${feature}`} 
+                          checked={filters.features.includes(feature)}
+                          onCheckedChange={() => handleFeatureToggle(feature)}
+                        />
+                        <Label 
+                          htmlFor={`feature-${feature}`}
+                          className="text-sm cursor-pointer"
+                        >
+                          {feature}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 
                 <div>

@@ -34,7 +34,7 @@ export default function AppFooter() {
           <div>
             <h3 className="text-lg font-semibold mb-4">For Buyers</h3>
             <ul className="space-y-2">
-              <li><Link href="/buy"><a className="text-gray-400 hover:text-white">Search Properties</a></Link></li>
+              <li><Link className="text-gray-400 hover:text-white" href="/buy">Search Properties</Link></li>
               <li><a href="#" className="text-gray-400 hover:text-white">Buying Guide</a></li>
               <li><a href="#" className="text-gray-400 hover:text-white">Mortgage Calculator</a></li>
               <li><a href="#" className="text-gray-400 hover:text-white">First-time Buyers</a></li>
@@ -45,7 +45,7 @@ export default function AppFooter() {
           <div>
             <h3 className="text-lg font-semibold mb-4">For Sellers</h3>
             <ul className="space-y-2">
-              <li><Link href="/sell"><a className="text-gray-400 hover:text-white">List Your Property</a></Link></li>
+              <li><Link className="text-gray-400 hover:text-white" href="/sell">List Your Property</Link></li>
               <li><a href="#" className="text-gray-400 hover:text-white">Seller's Guide</a></li>
               <li><a href="#" className="text-gray-400 hover:text-white">Property Valuation</a></li>
               <li><a href="#" className="text-gray-400 hover:text-white">Marketing Tools</a></li>

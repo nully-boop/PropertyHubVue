@@ -8,7 +8,6 @@ import {
 import { db } from "./db";
 import { eq, and, gte, like, inArray, sql, or } from "drizzle-orm";
 import type { IStorage, PropertyFilters } from "./storage";
-import { Storage } from "node:fs";
 import connectPg from "connect-pg-simple";
 import session from "express-session";
 import { pool } from "./db";
@@ -16,7 +15,7 @@ import { pool } from "./db";
 const PostgresSessionStore = connectPg(session);
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: any;
 
   constructor() {
     this.sessionStore = new PostgresSessionStore({ 
@@ -240,8 +239,20 @@ export class DatabaseStorage implements IStorage {
       
       return result[0];
     } else {
-      // Create new features
-      const result = await db.insert(propertyFeatures).values(featureData).returning();
+      // Create new features with defaults for missing boolean fields
+      const completeFeatureData = {
+        propertyId,
+        hasPool: featureData.hasPool || false,
+        hasGarden: featureData.hasGarden || false,
+        hasGarage: featureData.hasGarage || false,
+        hasBalcony: featureData.hasBalcony || false,
+        hasAirConditioning: featureData.hasAirConditioning || false,
+        hasGym: featureData.hasGym || false,
+        hasSecuritySystem: featureData.hasSecuritySystem || false,
+        hasFireplace: featureData.hasFireplace || false,
+        ...featureData
+      };
+      const result = await db.insert(propertyFeatures).values(completeFeatureData).returning();
       return result[0];
     }
   }

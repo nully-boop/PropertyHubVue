@@ -6,6 +6,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { z } from "zod";
+import { setupAuth } from "./auth";
 
 // Setup file upload with multer
 const storage_dir = path.join(process.cwd(), "uploads");
@@ -37,6 +38,9 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up auth routes
+  setupAuth(app);
+  
   // Set up demo data
   await setupDemoData();
 

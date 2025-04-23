@@ -5,9 +5,13 @@ import {
   propertyImages, type PropertyImage, type InsertPropertyImage,
   inquiries, type Inquiry, type InsertInquiry
 } from "@shared/schema";
+import { DatabaseStorage } from "./database-storage";
 
 // Modify the interface with any CRUD methods you might need
 export interface IStorage {
+  // Session store
+  sessionStore: any;
+  
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -54,6 +58,8 @@ export type PropertyFilters = {
 };
 
 export class MemStorage implements IStorage {
+  sessionStore: any;
+  
   private users: Map<number, User>;
   private properties: Map<number, Property>;
   private propertyFeatures: Map<number, PropertyFeatures>;
@@ -78,6 +84,9 @@ export class MemStorage implements IStorage {
     this.propertyFeaturesIdCounter = 1;
     this.propertyImageIdCounter = 1;
     this.inquiryIdCounter = 1;
+    
+    // Use a dummy session store
+    this.sessionStore = {};
 
     // Initialize with demo data
     this.initializeDemoData();
@@ -428,4 +437,5 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Use database storage instead of in-memory storage
+export const storage = new DatabaseStorage();
